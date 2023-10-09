@@ -1,56 +1,93 @@
-import { View, Text, TouchableOpacity, ScrollView  } from 'react-native'
-import React from 'react'
-import { useState } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { StatusBar } from 'expo-status-bar'
-import { Bars3CenterLeftIcon, MagnifyingGlassIcon } from "react-native-heroicons/outline"
-import {styles} from "../theme/index"
-import TrendingMovies from "../components/trendingMovies"
-import MovieList from '../components/movieList'
-import { useNavigation } from '@react-navigation/native'
+import { View, Text, TouchableOpacity, ScrollView, Platform } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {Bars3CenterLeftIcon, MagnifyingGlassIcon} from 'react-native-heroicons/outline'
+import TrendingMovies from '../components/trendingMovies';
+import MovieList from '../components/movieList';
+import { StatusBar } from 'expo-status-bar';
+import { fetchTopRatedMovies, fetchTrendingMovies, fetchUpcomingMovies } from '../api/moviedb';
+import { useNavigation } from '@react-navigation/native';
+import Loading from '../components/loading';
+import { styles } from '../theme';
 
-const ios = Platform.OS == 'ios';
+const ios = Platform.OS === 'ios';
 
 export default function HomeScreen() {
 
-    const [trending,setTrending] = useState([1,2,3])
-    const [upcoming,setUpcoming] = useState([1,2,3])    
-    const [topRated,setTopRated] = useState([1,2,3])  
-    const navigation = useNavigation();
+  const [trending, setTrending] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [topRated, setTopRated] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigation = useNavigation();
 
+
+  useEffect(()=>{
+    getTrendingMovies();
+    getUpcomingMovies();
+    getTopRatedMovies();
+  },[]);
+
+  const getTrendingMovies = async ()=>{
+    const data = await fetchTrendingMovies();
+    console.log('got trending', data.results.length)
+    if(data && data.results) setTrending(data.results);
+    setLoading(false)
+  }
+  const getUpcomingMovies = async ()=>{
+    const data = await fetchUpcomingMovies();
+    console.log('got upcoming', data.results.length)
+    if(data && data.results) setUpcoming(data.results);
+  }
+  const getTopRatedMovies = async ()=>{
+    const data = await fetchTopRatedMovies();
+    console.log('got top rated', data.results.length)
+    if(data && data.results) setTopRated(data.results);
+  }
 
 
 
   return (
     <View className="flex-1 bg-neutral-800">
-        {/* SEARCH BAR AND LOGO */}
-      <SafeAreaView className={ios? "mb-2" : 'mb-3'}>
+      {/* search bar */}
+      <SafeAreaView className={ios? "-mb-2": "mb-3"}>
         <StatusBar style="light" />
         <View className="flex-row justify-between items-center mx-4">
-            <Bars3CenterLeftIcon size="30" strokeWidth={2} color="white" />
-            <Text className="text-white text-3xl font-bold">
-                <Text style={styles.text}>M</Text>ovies
-                </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Search')}>
-                <MagnifyingGlassIcon size="30"  strokeWidth={2} color="white" />
-            </TouchableOpacity>           
+          <Bars3CenterLeftIcon size="30" strokeWidth={2} color="white" />
+          <Text 
+            className="text-white text-3xl font-bold">
+              <Text style={styles.text}>M</Text>ovies
+          </Text>
+          <TouchableOpacity onPress={()=> navigation.navigate('Search')}>
+            <MagnifyingGlassIcon size="30" strokeWidth={2} color="white" />
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
+      {
+        loading? (
+          <Loading />
+        ):(
+          <ScrollView 
+            showsVerticalScrollIndicator={false} 
+            contentContainerStyle={{paddingBottom: 10}}
+          >
 
-      <ScrollView showVerticalScrollIndicator={false}
-                  contentContainerStyle={{paddingBottom: 10}}
-                  >
-    
-        {/* TRENDING MOVIES CAROUSEL */}
-        <TrendingMovies data={trending}/>
+            {/* Trending Movies Carousel */}
+            { trending.length>0 && <TrendingMovies data={trending} /> }
 
-        {/* UPCOMING MOVIES ROW*/}
-        <MovieList title="Upcoming" data={upcoming}/>
+            {/* upcoming movies row */}
+            { upcoming.length>0 && <MovieList title="Upcoming" data={upcoming} /> }
+            
 
-         {/* TOP RATED MOVIES ROW*/}
-         <MovieList title="Top Rated" data={topRated}/>
-      </ScrollView>
+            {/* top rated movies row */}
+            { topRated.length>0 && <MovieList title="Top Rated" data={topRated} /> }
 
-    </View>
+          </ScrollView>
+        )
+      }
+      
+  </View>
+      
+
+   
   )
 }
