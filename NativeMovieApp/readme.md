@@ -1,0 +1,1 @@
+TailwindCss version tiene que ser 3.3.2 para que no se la pegue
